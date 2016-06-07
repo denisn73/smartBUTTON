@@ -3,23 +3,19 @@
 BUTTON::BUTTON(byte _pin, byte _state, unsigned int _dreb) :
 pin_number(_pin),
 pin_pressed_state(_state),
-pin_dreb(_dreb),
-pin_state_flag(0),
-pin_dreb_counter(0),
-pin_onPressed_flag(0),
-pin_onReleased_flag(0),
-pin_onHold_flag(0),
-previousTime(0),
-pin_holdTime(1000),
-pin_hold_counter(0)
+pin_dreb(_dreb)
 {
   pinMode(pin_number, INPUT);
   if(pin_pressed_state) digitalWrite(pin_number, LOW);
   else                  digitalWrite(pin_number, HIGH);
-  pin_dreb = _dreb;
 }
 
-
+BUTTON::BUTTON(byte* btn_ptr, byte _state, unsigned int _dreb) :
+pin_pressed_state(_state),
+pin_dreb(_dreb),
+btn(btn_ptr)
+{
+}
 
 void BUTTON::setHoldTime(unsigned int _time) {
   pin_holdTime = _time;
@@ -30,11 +26,11 @@ void BUTTON::setDreb(unsigned int _dreb) {
 }
 
 void BUTTON::handle() {
-  unsigned long currentTime = micros();
-  if(currentTime - previousTime >= 1000) {
-    previousTime = currentTime;
+  //unsigned long currentTime = micros();
+  //if(currentTime - previousTime >= 1000) {
+  //  previousTime = currentTime;
     onHandle();
-  }  
+  //}  
 }
 
 void BUTTON::onHandle() {
@@ -49,9 +45,9 @@ void BUTTON::onHandle() {
       }
     } else {
       pin_dreb_counter = 0;
-    }
-    if(pin_hold_counter <= pin_holdTime) pin_hold_counter++;
-    if(pin_hold_counter == pin_holdTime) pin_onHold_flag = 1;
+      if(pin_hold_counter <= pin_holdTime) pin_hold_counter++;
+      if(pin_hold_counter == pin_holdTime) pin_onHold_flag = 1;
+    }    
   } else {
     if(pin_state_flag) {
       if(pin_dreb_counter < pin_dreb) pin_dreb_counter++;
@@ -60,17 +56,25 @@ void BUTTON::onHandle() {
         pin_state_flag = false;
         pin_onReleased_flag = true;
         pin_onPressed_flag = false;
+        if(pin_hold_counter < pin_holdTime) pin_onClick_flag = true;
+        pin_hold_counter = 0;        
       }
     } else {
       pin_dreb_counter = 0;
-    }
-    pin_onHold_flag = 0;
-    pin_hold_counter = 0;
+      pin_onHold_flag = 0;
+//      pin_hold_counter =0;
+    }    
   }
 }
 
 byte BUTTON::isIT() {
-  return (digitalRead(pin_number) == pin_pressed_state);
+  if(btn) return (*btn == pin_pressed_state);
+  else    return (digitalRead(pin_number) == pin_pressed_state);
+}
+
+byte BUTTON::isNOT() {
+  if(btn) return (*btn != pin_pressed_state);
+  else    return (digitalRead(pin_number) != pin_pressed_state);
 }
 
 byte BUTTON::isPressed() {
@@ -100,18 +104,21 @@ byte BUTTON::onReleased() {
 }
 
 byte BUTTON::onClick() {
-  if(onReleased() && pin_hold_counter < pin_holdTime) {
-	cb_func();
-	return true;
+  if(pin_onClick_flag) {
+      pin_onClick_flag = false;
+      pin_onReleased_flag = false;
+      pin_onPressed_flag  = false;
+      if(cb_func) cb_func();
+    return true;
   }
   return false;
 }
 
 byte BUTTON::onHold() {
   if(pin_onHold_flag) {
-	pin_onPressed_flag = false;
-    pin_onHold_flag    = false;
-	cb_func();
+    pin_onPressed_flag = false;
+    pin_onHold_flag  = false;
+    if(cb_func) cb_func();
     return true;
   }
   return false;
