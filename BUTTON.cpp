@@ -26,11 +26,7 @@ void BUTTON::setDreb(unsigned int _dreb) {
 }
 
 void BUTTON::handle() {
-  //unsigned long currentTime = micros();
-  //if(currentTime - previousTime >= 1000) {
-  //  previousTime = currentTime;
-    onHandle();
-  //}  
+  onHandle();
 }
 
 void BUTTON::onHandle() {
@@ -46,7 +42,12 @@ void BUTTON::onHandle() {
     } else {
       pin_dreb_counter = 0;
       if(pin_hold_counter <= pin_holdTime) pin_hold_counter++;
-      if(pin_hold_counter == pin_holdTime) pin_onHold_flag = 1;
+      if(pin_hold_counter == pin_holdTime) {
+		  pin_hold_counter++;
+		  if(beep_func) beep_func();
+		  if(hold_func) hold_func();
+		  pin_onHold_flag = true;
+	  }
     }    
   } else {
     if(pin_state_flag) {
@@ -56,13 +57,17 @@ void BUTTON::onHandle() {
         pin_state_flag = false;
         pin_onReleased_flag = true;
         pin_onPressed_flag = false;
-        if(pin_hold_counter < pin_holdTime) pin_onClick_flag = true;
-        pin_hold_counter = 0;        
+        if(pin_hold_counter < pin_holdTime) {
+			if(beep_func)  beep_func();
+			if(click_func) click_func();
+			pin_onClick_flag = true;
+		}
+        pin_hold_counter = 0;
       }
     } else {
       pin_dreb_counter = 0;
       pin_onHold_flag = 0;
-//      pin_hold_counter =0;
+      //pin_hold_counter = 0;
     }    
   }
 }
@@ -108,7 +113,8 @@ byte BUTTON::onClick() {
       pin_onClick_flag = false;
       pin_onReleased_flag = false;
       pin_onPressed_flag  = false;
-      if(cb_func) cb_func();
+      if(beep_func)  beep_func();
+      if(click_func) click_func();
     return true;
   }
   return false;
@@ -118,7 +124,8 @@ byte BUTTON::onHold() {
   if(pin_onHold_flag) {
     pin_onPressed_flag = false;
     pin_onHold_flag  = false;
-    if(cb_func) cb_func();
+	if(beep_func) beep_func();
+    if(hold_func) hold_func();
     return true;
   }
   return false;
@@ -130,6 +137,17 @@ byte BUTTON::isHold() {
 }
 
 void BUTTON::setCallBack(CallBack func_ptr) { 
-  cb_func = func_ptr; 
+  cb_func = func_ptr;
 }
 
+void BUTTON::setBeepCallBack(CallBack func_ptr) { 
+  beep_func = func_ptr; 
+}
+
+void BUTTON::setClickCallBack(CallBack func_ptr) { 
+  click_func = func_ptr;
+}
+
+void BUTTON::setHoldCallBack(CallBack func_ptr) { 
+  hold_func = func_ptr; 
+}

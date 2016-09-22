@@ -25,6 +25,9 @@ class BUTTON
   
   typedef void(*CallBack)();
   void setCallBack(CallBack func_ptr);
+  void setBeepCallBack(CallBack func_ptr);
+  void setHoldCallBack(CallBack func_ptr);
+  void setClickCallBack(CallBack func_ptr);
   private:
   
   void onHandle();            // действие обработчика кнопки
@@ -43,6 +46,9 @@ class BUTTON
   byte*        btn                 = 0;    // указатель виртуальной кнопки
   
   CallBack cb_func;
+  CallBack beep_func;
+  CallBack hold_func;
+  CallBack click_func;
 };
 
 #endif // BUTTON_H
